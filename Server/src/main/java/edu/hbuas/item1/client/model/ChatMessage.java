@@ -19,5 +19,5 @@ public class ChatMessage implements Serializable {
     private String content;
     private String time;
     private ChatMessageType type;
-
+    private Boolean register;
 }

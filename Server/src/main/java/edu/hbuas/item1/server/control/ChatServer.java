@@ -89,6 +89,7 @@ public class ChatServer {
                             if (user != null) {
                                 allClients.put(user.getUsername(), out);
                             }
+
                             //这里应该链接数据库判断用户名和密码的正确与否,同时将判断结果封装到一个Message对象中
                             ChatMessage loginResult = new ChatMessage();
 
@@ -98,10 +99,28 @@ public class ChatServer {
                             //消息封装好之后，就可以使用当前线程的输出流将这个登陆结果发送给客户端了
                             out.writeObject(loginResult);
                             out.flush();
+                            Thread.sleep(2000);
+                            System.out.println("等待中！");
+                            //if(allClients.containsKey(c.getFrom())){//如果有离线消息则发给客户端
+                            System.out.println("有离线消息！");
 
+                            ChatMessage chatMessage = dao.removeload(c.getFrom());
+                            out.writeObject(chatMessage);
+                            out.flush();
+                            //}
                             break;
                         }
                         case REGISTER: {
+                            System.out.println("登陆消息，这里应该链接数据库处理登陆业务");
+                            //注册消息
+                            Boolean zhuce = dao.register(c.getFrom());
+                            ChatMessage zhuce1 = new ChatMessage();
+                            zhuce1.setRegister(zhuce);
+
+                            //将true或flase返回注册页面，
+                            out.writeObject(zhuce1);
+                            out.flush();
+                            break;
 
                         }
                         case TEXT: {
@@ -114,10 +133,15 @@ public class ChatServer {
                                 ObjectOutputStream out = allClients.get(to);
                                 out.writeObject(c);
                                 out.flush();
+
                                 System.out.println("对方在线，服务器已经将消息转发过去");
                             } else {
-                                System.out.println("对方不在线，服务器不转发消息");
+                                System.out.println("对方不在线");
                                 //else说明对方不在线，这里可以熟悉额外的代码将消息暂存到数据库，等用户登陆后再提取（离线消息缓存）
+                                if (dao.addload(c)) {
+                                    System.out.println("离线消息以储存！");
+                                }
+
                             }
                             //System.out.println("文本消息，服务器将会把这条消息转发给具体的聊天用户");
                             break;

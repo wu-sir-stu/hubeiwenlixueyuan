@@ -25,7 +25,7 @@ public class LoginFrame extends JFrame {
     private JPanel contentPane;
     private JTextField textField;
     private JPasswordField passwordField;
-    private ActionListener FirstListener;
+
 
     /**
      * Launch the application.
@@ -77,40 +77,9 @@ public class LoginFrame extends JFrame {
         btnNewButton = new JButton("\u767B\u5F55");
         btnNewButton.setBounds(54, 141, 71, 23);
         contentPane.add(btnNewButton);
-
-        FirstListener = new FirstListener();
-        btnNewButton.addActionListener(FirstListener);
-
-        btnNewButton_1 = new JButton("\u6CE8\u518C");
-        btnNewButton_1.setBounds(140, 141, 71, 23);
-        contentPane.add(btnNewButton_1);
-
-
-        //渲染整个窗口上的所有组件，保证所有组件显示成功
-        paintComponents(getGraphics());
-        paintAll(getGraphics());
-    }
-
-    public void connectServer() {
-        //登陆界面底层持有的socket对象应该在构造器最后一行初始化（先要渲染界面，然后再建立底层通讯）
-        try {
-            client = new Socket("localhost", 8888);
-            //因为为了更好的传递和处理消息，所以，项目中的任何消息都会封装成一个标准的ChatMessage对象
-            //所以，底层socket必须提供出序列化流（能将java对象写入通道的流）
-            out = new ObjectOutputStream(client.getOutputStream());
-
-            in = new ObjectInputStream(client.getInputStream());
-        } catch (IOException e) {
-            //一旦创建socket时出现异常，说明链接服务器失败，这里应该使用swing的ui技术弹出错误提示框
-            JOptionPane.showMessageDialog(this, "网络链接失败，请重试！", "温馨提示", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    class FirstListener implements ActionListener {
-
-        public void actionPerformed(ActionEvent e) {
-            if (e.getSource() == btnNewButton) {
-
+        btnNewButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
                 System.out.println("点击了登陆按钮");
                 //1.先获取用户在ui的输入框中输入的数据
                 String username = textField.getText().trim();
@@ -159,9 +128,41 @@ public class LoginFrame extends JFrame {
                 } catch (ClassNotFoundException ex) {
                     ex.printStackTrace();
                 }
-
-
             }
+        });
+
+
+        btnNewButton_1 = new JButton("\u6CE8\u518C");
+        btnNewButton_1.setBounds(140, 141, 71, 23);
+        contentPane.add(btnNewButton_1);
+        btnNewButton_1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.out.println("点击了注册按钮");
+                RegisterFrame register = new RegisterFrame(out, in);
+                register.setVisible(true);
+            }
+        });
+
+        //渲染整个窗口上的所有组件，保证所有组件显示成功
+        paintComponents(getGraphics());
+        paintAll(getGraphics());
+    }
+
+    public void connectServer() {
+        //登陆界面底层持有的socket对象应该在构造器最后一行初始化（先要渲染界面，然后再建立底层通讯）
+        try {
+            client = new Socket("localhost", 8888);
+            //因为为了更好的传递和处理消息，所以，项目中的任何消息都会封装成一个标准的ChatMessage对象
+            //所以，底层socket必须提供出序列化流（能将java对象写入通道的流）
+            out = new ObjectOutputStream(client.getOutputStream());
+
+            in = new ObjectInputStream(client.getInputStream());
+        } catch (IOException e) {
+            //一旦创建socket时出现异常，说明链接服务器失败，这里应该使用swing的ui技术弹出错误提示框
+            JOptionPane.showMessageDialog(this, "网络链接失败，请重试！", "温馨提示", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+
 }

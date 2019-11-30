@@ -1,10 +1,19 @@
 package edu.hbuas.item1.client.view;
 
+import edu.hbuas.item1.client.model.ChatMessage;
+import edu.hbuas.item1.client.model.ChatMessageType;
+import edu.hbuas.item1.client.model.ChatUser;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public class RegisterFrame extends JFrame {
+
 
     private JPanel contentPane;
     private JTextField textField;
@@ -12,26 +21,24 @@ public class RegisterFrame extends JFrame {
     private JPasswordField passwordField_1;
     private JTextField textField_1;
 
-    /**
-     * Launch the application.
-     */
-    public static void main(String[] args) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                try {
-                    RegisterFrame frame = new RegisterFrame();
-                    frame.setVisible(true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
+
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
+    private final JButton btnNewButton;
+    private final JRadioButton radioButton;
+    private final JRadioButton radioButton_1;
+    private final JComboBox comboBox;
+    private final JTextArea textArea;
+    private final ButtonGroup buttonGroup;
+    private final JButton button;
+
 
     /**
      * Create the frame.
      */
-    public RegisterFrame() {
+    public RegisterFrame(ObjectOutputStream out, ObjectInputStream in) {
+        this.out = out;
+        this.in = in;
         setResizable(false);
         setTitle("\u804A\u5929\u6CE8\u518C\u7A97\u53E3");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -40,6 +47,7 @@ public class RegisterFrame extends JFrame {
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(null);
+        setDefaultCloseOperation(HIDE_ON_CLOSE);
 
         JLabel label = new JLabel("\u7528\u6237\u540D");
         label.setBounds(55, 57, 54, 15);
@@ -87,30 +95,96 @@ public class RegisterFrame extends JFrame {
         contentPane.add(textField_1);
         textField_1.setColumns(10);
 
-        JRadioButton radioButton = new JRadioButton("\u7537");
+        radioButton = new JRadioButton("\u7537");
         radioButton.setSelected(true);
         radioButton.setBounds(144, 259, 53, 23);
         contentPane.add(radioButton);
 
-        JRadioButton radioButton_1 = new JRadioButton("\u5973");
+        radioButton_1 = new JRadioButton("\u5973");
         radioButton_1.setBounds(199, 259, 48, 23);
         contentPane.add(radioButton_1);
+        buttonGroup = new ButtonGroup();
+        buttonGroup.add(radioButton);
+        buttonGroup.add(radioButton_1);
 
-        JComboBox comboBox = new JComboBox();
-        comboBox.setModel(new DefaultComboBoxModel(new String[]{"1", "2", "3", "4"}));
+
+        comboBox = new JComboBox();
+        comboBox.setModel(new DefaultComboBoxModel(new java.lang.String[]{"1", "2", "3", "4"}));
         comboBox.setBounds(144, 300, 103, 21);
         contentPane.add(comboBox);
 
-        JTextArea textArea = new JTextArea();
+        textArea = new JTextArea();
         textArea.setBounds(146, 353, 101, 55);
         contentPane.add(textArea);
 
-        JButton btnNewButton = new JButton("\u6CE8\u518C");
+        btnNewButton = new JButton("\u6CE8\u518C");
         btnNewButton.setBounds(55, 429, 93, 23);
         contentPane.add(btnNewButton);
+        btnNewButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String username = textField.getText().trim();
+                String password = new String(passwordField.getPassword());
+                String password_1 = new String(passwordField_1.getPassword());
+                if (!password.equals(password_1)) {
+                    JOptionPane.showMessageDialog(RegisterFrame.this, "请在此检查密码，两次输入密码不一致！", "温馨提示", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                String nickname = textField_1.getText();
+                String sex;
+                if (radioButton.isSelected()) {
+                    sex = "男";
+                } else {
+                    sex = "女";
+                }
+                long age = Long.parseLong((String) comboBox.getSelectedItem());
+                String signature = textArea.getText();
+                //把消息封装
+                ChatMessage chatMessage = new ChatMessage();
+                ChatUser user = new ChatUser();
+                user.setUsername(Long.parseLong(username));
+                user.setPassword(password);
+                user.setNickname(nickname);
+                user.setSex(sex);
+                user.setAge(age);
+                user.setSignature(signature);
+                user.setImage("images/2.gif");
+                chatMessage.setFrom(user);
+                chatMessage.setType(ChatMessageType.REGISTER);
+                //用流传输数据
+                try {
+                    out.writeObject(chatMessage);
+                    out.flush();
+                } catch (IOException ex) {
+                    System.err.println("注册消息发送失败！");
 
-        JButton button = new JButton("\u8FD4\u56DE\u767B\u5F55");
+                }
+
+                try {
+                    ChatMessage r = (ChatMessage) in.readObject();
+                    if (r.getRegister()) {
+                        System.out.println("注册成功！");
+                        JOptionPane.showMessageDialog(RegisterFrame.this, "注册成功！", "温馨提示", JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        return;
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                } catch (ClassNotFoundException ex) {
+                    ex.printStackTrace();
+                }
+
+            }
+        });
+
+        button = new JButton("\u8FD4\u56DE\u767B\u5F55");
         button.setBounds(154, 429, 93, 23);
         contentPane.add(button);
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                RegisterFrame.this.setVisible(false);
+            }
+        });
     }
 }

@@ -110,7 +110,7 @@ public class MainFrame extends JFrame {
                 while (true) {
                     try {
                         ChatMessage message = (ChatMessage) in.readObject();//read方法如果能读取到一条消息，说明服务器转发给我了一条别人发给我的消息
-                        if (allChatFrame.containsKey(message.getFrom().getUsername())) {
+                        if (allChatFrame == null && allChatFrame.containsKey(message.getFrom().getUsername())) {
                             allChatFrame.get(message.getFrom().getUsername()).setVisible(true);
                             allChatFrame.get(message.getFrom().getUsername()).getTextArea().append(message.getFrom().getNickname() + "   " + message.getTime() + ":\r\n" + message.getContent() + "\r\n\r\n");
                         } else {

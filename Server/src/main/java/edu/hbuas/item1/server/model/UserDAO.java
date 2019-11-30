@@ -1,5 +1,6 @@
 package edu.hbuas.item1.server.model;
 
+import edu.hbuas.item1.client.model.ChatMessage;
 import edu.hbuas.item1.client.model.ChatUser;
 
 import java.sql.*;
@@ -137,5 +138,55 @@ public class UserDAO {
         } finally {
             return users;
         }
+    }
+
+
+    /**
+     * 添加离线消息
+     */
+    public boolean addload(ChatMessage chatMessage) {
+        boolean added = false;
+        PreparedStatement pre = getPre("insert into loadmessage(fromusername,tousername,message,time) values(?,?,?,?)");
+        try {
+            pre.setLong(1, chatMessage.getFrom().getUsername());
+            pre.setLong(2, chatMessage.getTo().getUsername());
+            pre.setString(3, chatMessage.getContent());
+            pre.setString(4, chatMessage.getTime());
+
+            added = pre.executeUpdate() > 0 ? true : false;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return added;
+    }
+
+    /**
+     * 移除离线消息
+     */
+    public ChatMessage removeload(ChatUser user) {
+        ChatMessage chatMessage = null;
+        ChatUser c = null;
+        PreparedStatement pre = getPre("select * from loadmessage where tousername=? ");
+        try {
+            pre.setLong(1, user.getUsername());
+
+            ResultSet rs = pre.executeQuery();
+            while (rs.next()) {
+                c.setUsername(rs.getLong("fromusername"));
+
+                chatMessage.setFrom(c);
+
+                chatMessage.setTo(user);
+                chatMessage.setContent(rs.getString("message"));
+                chatMessage.setTime(rs.getString("time"));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            return chatMessage;
+        }
+
+
     }
 }
