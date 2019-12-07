@@ -1,6 +1,7 @@
 package edu.hbuas.item1.server.control;
 
 import edu.hbuas.item1.client.model.ChatMessage;
+import edu.hbuas.item1.client.model.ChatMessageType;
 import edu.hbuas.item1.client.model.ChatUser;
 import edu.hbuas.item1.server.model.UserDAO;
 import lombok.AllArgsConstructor;
@@ -13,9 +14,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 这是聊天软件的服务器类，用来对客户端提供聊天功能中的各种服务
@@ -99,15 +98,37 @@ public class ChatServer {
                             //消息封装好之后，就可以使用当前线程的输出流将这个登陆结果发送给客户端了
                             out.writeObject(loginResult);
                             out.flush();
-                            Thread.sleep(2000);
+                            Thread.sleep(3000);
                             System.out.println("等待中！");
-                            //if(allClients.containsKey(c.getFrom())){//如果有离线消息则发给客户端
-                            System.out.println("有离线消息！");
+                            //如果有离线消息则发给客户端
 
-                            ChatMessage chatMessage = dao.removeload(c.getFrom());
-                            out.writeObject(chatMessage);
-                            out.flush();
-                            //}
+                            user.setUsername(user.getUsername());
+                            Queue<ChatMessage> messages = dao.duload(user);
+                            if (messages != null) {
+                                System.out.println(user.getUsername() + "有离线消息！");
+
+
+                                Iterator iter = messages.iterator();
+                                //2、通过循环迭代
+                                //hasNext():判断是否存在下一个元素
+                                while (iter.hasNext()) {
+                                    //如果存在，则调用next实现迭代
+                                    ChatMessage chatMessage = (ChatMessage) iter.next();  //把Object型强转成int型
+                                    out.writeObject(chatMessage);
+                                    out.flush();
+                                    System.out.println(chatMessage.toString());//打印消息
+                                    System.out.println(" ");
+                                    System.out.println(" ");
+                                    System.out.println("来自" + chatMessage.getFrom().getUsername() + "一条离线消息发给" + chatMessage.getTo());
+                                }
+                                messages.removeAll(messages);
+                                System.out.println("所有离线消息发送出去！");
+                            }
+
+
+
+
+
                             break;
                         }
                         case REGISTER: {
@@ -148,11 +169,52 @@ public class ChatServer {
                         }
                         case SHAKE: {
                             System.out.println("抖动消息，服务器将会把这条消息转发给具体的聊天用户");
+                            c.setTime(new Date().toLocaleString());
+                            //2.到服务器的那个所有客户端的集合里去找消息接受人是否在这个集合里
+                            long to = c.getTo().getUsername();//获取消息接受人的QQ号
+                            if (allClients.containsKey(to)) {//if 说明从服务器的列表里找到了消息接受人（对方在线的）
+                                //既然找到这个用户了，就从服务器的集合里拿出这个消息接受用户的输出流，将消息发送给这个用户即可
+                                ObjectOutputStream out = allClients.get(to);
+                                out.writeObject(c);
+                                out.flush();
+                                System.out.println("对方在线，服务器已经将消息转发过去");
+                            } else {
+                                System.out.println("对方不在线，服务器不转发消息");
+                                //else说明对方不在线，这里可以熟悉额外的代码将消息暂存到数据库，等用户登陆后再提取（离线消息缓存）
+                            }
+                            //System.out.println("文本消息，服务器将会把这条消息转发给具体的聊天用户");
+                            break;
+                        }
+                        case FILE: {
+                            System.out.println("文件消息，服务器处理文件，将文件传输给用户！");
+                            c.setTime(new Date().toString());
+                            long to = c.getTo().getUsername();
+                            if (allClients.containsKey(to)) {
+                                ObjectOutputStream out = allClients.get(to);
+                                out.writeObject(c);
+                                out.flush();
+                                System.out.println("文件转发成功！");
+                            } else {
+                                System.out.println("对方不在线，不转发文件！");
+                            }
+                            break;
+                        }
+                        case UPDATE: {
+                            System.out.println("更新数据库中用户信息！");
+                            boolean up = dao.upchatuser(c.getFrom());
+                            ChatMessage up1 = new ChatMessage();
+                            up1.setRegister(up);
+                            up1.setFrom(c.getFrom());
+                            up1.setType(ChatMessageType.UPDATE);
+                            out.writeObject(up1);
+                            out.flush();
                             break;
                         }
                     }
                 } catch (Exception e) {
+                    //allClients.remove();
                     System.out.println("服务结束！");
+                    //e.printStackTrace();
                     return;
                 }
             }
@@ -163,4 +225,6 @@ public class ChatServer {
     public static void main(String[] args) {
         new ChatServer();
     }
+
+
 }

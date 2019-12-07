@@ -9,6 +9,8 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -120,6 +122,31 @@ public class LoginFrame extends JFrame {
                         MainFrame m = new MainFrame(loginResult.getFrom(), out, in);
                         m.setVisible(true);
                         LoginFrame.this.dispose();//释放当前登陆窗口的ui资源并隐藏当前窗口
+
+                        JPopupMenu popupMenu = new JPopupMenu();//右击菜单
+                        JButton mItemadd = new JButton("添加好友");
+
+                        JButton mItemup = new JButton("修改信息");
+                        mItemup.addActionListener(new ActionListener() {
+                            @Override
+                            public void actionPerformed(ActionEvent e) {
+                                Updateinformation up = new Updateinformation(out, loginResult.getFrom());
+                                up.setVisible(true);
+                            }
+                        });
+
+                        popupMenu.add(mItemadd);
+                        popupMenu.add(mItemup);
+                        m.addMouseListener(new MouseAdapter() {
+                            @Override
+                            public void mouseClicked(MouseEvent e) {
+                                if (e.getButton() == 3) {
+                                    popupMenu.show(m, e.getX(), e.getY());
+                                }
+                            }
+                        });
+
+
                     } else {
                         JOptionPane.showMessageDialog(LoginFrame.this, "登陆失败，请检查用户名和密码是否正确！", "温馨提示", JOptionPane.ERROR_MESSAGE);
                     }

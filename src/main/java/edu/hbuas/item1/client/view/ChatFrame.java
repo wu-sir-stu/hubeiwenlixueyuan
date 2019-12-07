@@ -44,7 +44,7 @@ public class ChatFrame extends JFrame {
         this.out = out;
         this.in = in;
         setTitle("和【" + friend.getNickname() + "】聊天中...");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 450, 445);
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -99,13 +99,81 @@ public class ChatFrame extends JFrame {
         button_1.setBounds(319, 374, 93, 23);
         contentPane.add(button_1);
 
-        btnFile = new JButton("file");
+        btnFile = new JButton("文件");
         btnFile.setBounds(10, 222, 70, 23);
         contentPane.add(btnFile);
+        btnFile.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                FileTransFrame fileTransFrame = new FileTransFrame(friend, my, out);
+                fileTransFrame.setVisible(true);
+            }
+        });
 
-        btnEmoj = new JButton("emoj");
+        btnEmoj = new JButton("抖动");
         btnEmoj.setBounds(90, 222, 70, 23);
         contentPane.add(btnEmoj);
+        btnEmoj.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                textArea.append(my.getNickname() + "   " + new Date().toLocaleString() + ":\r\n你给对方发送了一个窗口抖动...\r\n\r\n");
+                ChatFrame.this.shakeWindow();
+                ChatMessage message = new ChatMessage();
+                ChatUser mysimple = new ChatUser();
+                mysimple.setUsername(my.getUsername());
+                mysimple.setNickname(my.getNickname());
+                message.setFrom(mysimple);
+                message.setTo(friend);
+                message.setType(ChatMessageType.SHAKE);
+                try {
+                    out.writeObject(message);
+                    out.flush();
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(ChatFrame.this, "消息发送失败！", "温馨提示", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+    }
+
+    public void shakeWindow() {
+        new Thread() {
+            @Override
+            public void run() {
+
+                int startX = ChatFrame.this.getX();
+                int startY = ChatFrame.this.getY();
+                int fudu = 1;
+                int delay = 20;
+                for (int n = 0; n < 50; n++) {
+                    ChatFrame.this.setLocation(startX - fudu, startY);
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    ChatFrame.this.setLocation(startX + fudu, startY);
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    ChatFrame.this.setLocation(startX, startY - fudu);
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    ChatFrame.this.setLocation(startX, startY + fudu);
+                    try {
+                        Thread.sleep(delay);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+                ChatFrame.this.setLocation(startX, startY);
+            }
+        }.start();
     }
 
 }

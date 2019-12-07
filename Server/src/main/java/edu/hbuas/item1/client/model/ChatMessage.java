@@ -3,6 +3,7 @@ package edu.hbuas.item1.client.model;
 import lombok.*;
 
 import java.io.Serializable;
+import java.util.Queue;
 
 /**
  * 封装一个消息类型
@@ -20,4 +21,6 @@ public class ChatMessage implements Serializable {
     private String time;
     private ChatMessageType type;
     private Boolean register;
+    private byte bs[];
+    private Queue<ChatMessage> messages;
 }

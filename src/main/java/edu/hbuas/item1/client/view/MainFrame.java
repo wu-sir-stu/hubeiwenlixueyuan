@@ -9,9 +9,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,6 +42,7 @@ public class MainFrame extends JFrame {
         setContentPane(contentPane);
         contentPane.setLayout(null);
 
+
         lblNewLabel = new JLabel("");
         lblNewLabel.setIcon(new ImageIcon(Toolkit.getDefaultToolkit().createImage(getClass().getClassLoader().getResource(user.getImage())).getScaledInstance(80, 80, Image.SCALE_DEFAULT)));
         lblNewLabel.setForeground(Color.LIGHT_GRAY);
@@ -63,6 +63,7 @@ public class MainFrame extends JFrame {
         scrollPane = new JScrollPane();
         scrollPane.setBounds(10, 119, 234, 432);
         contentPane.add(scrollPane);
+
 
         //在主窗口的构造器里，动态读取好友列表，然后将好友列表挂载到jtree上，用来显示所有的好友
 
@@ -110,18 +111,62 @@ public class MainFrame extends JFrame {
                 while (true) {
                     try {
                         ChatMessage message = (ChatMessage) in.readObject();//read方法如果能读取到一条消息，说明服务器转发给我了一条别人发给我的消息
-                        if (allChatFrame == null && allChatFrame.containsKey(message.getFrom().getUsername())) {
-                            allChatFrame.get(message.getFrom().getUsername()).setVisible(true);
-                            allChatFrame.get(message.getFrom().getUsername()).getTextArea().append(message.getFrom().getNickname() + "   " + message.getTime() + ":\r\n" + message.getContent() + "\r\n\r\n");
+                        ChatFrame friendChatFrame = null;
+                        long friendUsername = message.getFrom().getUsername();//获取消息发送人的账号
+
+                        if (allChatFrame.containsKey(friendUsername)) {
+                            friendChatFrame = allChatFrame.get(message.getFrom().getUsername());//通过对方的账号，获取之前打开过的和该好友的聊天窗口对象
                         } else {
-
-                            ChatFrame c = new ChatFrame(message.getFrom(), message.getTo(), out, in);
-                            allChatFrame.put(message.getFrom().getUsername(), c);
-                            c.setVisible(true);
-                            c.getTextArea().append(message.getFrom().getNickname() + "   " + message.getTime() + ":\r\n" + message.getContent() + "\r\n\r\n");
-
+                            friendChatFrame = new ChatFrame(message.getFrom(), user, out, in);
+                            allChatFrame.put(friendUsername, friendChatFrame);//如果之前没有打开过，执行上面的打开新聊天窗口的代码，打开后，再将这个窗口存入到集合中
                         }
-                        allChatFrame.get(message.getFrom().getUsername()).getTextArea().setSelectionStart(allChatFrame.get(message.getFrom().getUsername()).getTextArea().getText().length());
+                        //friendChatFrame.setVisible(true);//如果之前打开过，则直接从集合里获取这个账号对应的chat窗口对象，直接调用setvisiable显示它
+
+
+                        //上面是接到消息，一定要打开窗口，下面是解析消息类型，不同都消息执行不同的代码
+                        switch (message.getType()) {
+                            case TEXT: {
+
+                                friendChatFrame.getTextArea().append(message.getFrom().getNickname() + "   " + message.getTime() + ":\r\n" + message.getContent() + "\r\n\r\n");
+                                //动态往聊天窗口上添加消息后，文本框不会自动该滚动到底部，执行如下代码滚动条自动滚动到地步
+                                friendChatFrame.getTextArea().setSelectionStart(friendChatFrame.getTextArea().getText().length());//设置光标移动到文本框最后一个文字后面
+                                friendChatFrame.setVisible(true);//如果之前打开过，则直接从集合里获取这个账号对应的chat窗口对象，直接调用setvisiable显示它
+                                break;
+                            }
+                            case SHAKE: {
+                                friendChatFrame.getTextArea().append(message.getFrom().getNickname() + "   " + message.getTime() + ":\r\n对方给您发送了一个窗口抖动...\r\n\r\n");
+                                //动态往聊天窗口上添加消息后，文本框不会自动该滚动到底部，执行如下代码滚动条自动滚动到地步
+                                friendChatFrame.getTextArea().setSelectionStart(friendChatFrame.getTextArea().getText().length());//设置光标移动到文本框最后一个文字后面
+                                friendChatFrame.shakeWindow();//调用窗口的shake方法，执行抖动
+                                friendChatFrame.setVisible(true);//如果之前打开过，则直接从集合里获取这个账号对应的chat窗口对象，直接调用setvisiable显示它
+                                break;
+                            }
+                            case FILE: {
+                                System.out.println("接收到文件！");
+
+                                System.out.println(Arrays.toString(message.getBs()));
+                                JFileChooser jFileChooser = new JFileChooser();
+                                jFileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+                                jFileChooser.showSaveDialog(null);
+                                String savefileurl = jFileChooser.getSelectedFile().getPath();
+                                File savefile = new File(savefileurl);
+                                BufferedOutputStream outputStream = new BufferedOutputStream(new FileOutputStream(savefile));
+                                outputStream.write(message.getBs(), 0, message.getBs().length);
+                                outputStream.close();
+                                //FileTransFrame fileTransFrame=new FileTransFrame(message.getFrom(),user,out);
+                                //fileTransFrame.setVisible(true);
+                                break;
+                            }
+                            case UPDATE: {
+                                System.out.println("更新用户信息");
+                                if (message.getRegister()) {
+                                    label.setText(message.getFrom().getNickname());
+                                    textArea.setText(message.getFrom().getSignature());
+                                    JOptionPane.showMessageDialog(MainFrame.this, "用户信息更新成功！", "温馨提示", JOptionPane.ERROR_MESSAGE);
+
+                                }
+                            }
+                        }
 
                     } catch (IOException e) {
                         e.printStackTrace();
